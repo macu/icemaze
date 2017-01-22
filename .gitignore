@@ -1,9 +1,1 @@
-# Junk
-js/old
-js/*.js
-Cakefile
-
-# Vendor
-css/bootstrap*
-img/glyphicons*
-js/vendor
+node_modules
