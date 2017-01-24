@@ -1,0 +1,18 @@
+{
+  "name": "icemaze",
+  "private": true,
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "babel-preset-es2015-rollup": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-connect": "^5.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^3.1.0",
+    "gulp-sourcemaps": "^2.4.0",
+    "rollup": "^0.41.4",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-uglify": "^1.0.1"
+  }
+}
