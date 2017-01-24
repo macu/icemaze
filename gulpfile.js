@@ -6,12 +6,11 @@ var connect = require('gulp-connect');
 
 var rollup = require('rollup');
 var rollup_babel = require('rollup-plugin-babel');
-var rollup_resolve = require('rollup-plugin-node-resolve');
-var rollup_commonjs = require('rollup-plugin-commonjs');
 var rollup_uglify = require('rollup-plugin-uglify');
 
 var jsCache;
 gulp.task('js', function() {
+	// Thanks https://code.lengstorf.com/learn-rollup-js/
 	return rollup.rollup({
 		entry: 'js/app.js',
 		cache: jsCache,
@@ -19,23 +18,18 @@ gulp.task('js', function() {
 			'jquery', 'hammerjs'
 		],
 		plugins: [
-			rollup_resolve({
-				jsnext: true,
-				main: true,
-				browser: true,
-			}),
-			rollup_commonjs(),
 			rollup_babel({
+				// transpiles ES6 to ES5
 				babelrc: false,
 				exclude: 'node_modules/**',
 				presets: ["es2015-rollup"],
 			}),
-			(process.env.NODE_ENV === 'production' && rollup_uglify()),
+			rollup_uglify(),
 		],
 	}).then(function(bundle) {
 		jsCache = bundle;
 		bundle.write({
-			format: 'iife',
+			format: 'iife', // immediately invoked function expression
 			dest: 'js/compiled.js',
 			sourceMap: true,
 		});
