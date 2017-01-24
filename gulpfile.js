@@ -58,7 +58,7 @@ gulp.task('sass', function () {
 });
 
 gulp.task('sass:watch', function() {
-	gulp.watch('./css/planviewer/**/*.scss', ['sass']);
+	gulp.watch('css/**/*.scss', ['sass']);
 });
 
 gulp.task('devserver', function() {
