@@ -5,12 +5,18 @@ import Maze from './maze';
 
 var $canvas = $('canvas'), canvas = $canvas[0];
 var view = new CanvasView(canvas);
+window.canvasview = view;
 
 var hammer = new Hammer($canvas[0]);
 hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
 hammer.get('pan').set({ enable: false });
 hammer.on('swipeup swiperight swipedown swipeleft', function(e) {
-	console.log(e.type, arguments);
+	switch (e.type) {
+		case 'swipeup': view.panUp(); break;
+		case 'swiperight': view.panRight(); break;
+		case 'swipedown': view.panDown(); break;
+		case 'swipeleft': view.panLeft(); break;
+	}
 });
 hammer.on('tap', function(e) {
 	console.log(e.type, e.center);
@@ -22,10 +28,10 @@ hammer.on('press', function(e) {
 	console.log(e.type, arguments);
 });
 
-Mousetrap.bind('up', function() { console.log('up', arguments); });
-Mousetrap.bind('down', function() { console.log('down', arguments); });
-Mousetrap.bind('left', function() { console.log('left', arguments); });
-Mousetrap.bind('right', function() { console.log('right', arguments); });
+Mousetrap.bind('up', function() { view.panUp(); });
+Mousetrap.bind('right', function() { view.panRight(); });
+Mousetrap.bind('down', function() { view.panDown(); });
+Mousetrap.bind('left', function() { view.panLeft(); });
 
 $(window).on('mousewheel', function(e) {
 	if (e.deltaY > 0) {
