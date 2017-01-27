@@ -9,10 +9,11 @@ const panAnimPerTileMillis = 1000 / 10;
 export default class CanvasView {
 	constructor(canvas) {
 		this.canvas = canvas;
-		this.panX = 0;
+		this.targetX = 0; // current pan target
+		this.targetY = 0;
+		this.panX = 0; // actual pan point
 		this.panY = 0;
 		this.tileSize = 21;
-		this.debugRuntime = 0;
 		this.redrawRequired = false;
 		this.lastRedrawTime = 0;
 		this.preDrawCallbacks = [];
@@ -20,19 +21,12 @@ export default class CanvasView {
 		this.requireRedraw();
 	}
 
-	zoomIn() {
-		this.zoomTo(this.tileSize + (this.tileSize / 4)); // +25%
+	zoom(factor) {
+		this.zoomTo(this.tileSize * factor);
 	}
 
-	zoomOut() {
-		this.zoomTo(this.tileSize - (this.tileSize / 4)); // -25%
-	}
-
-	zoomTo(targetTileSize) {
-		if (this.zoomInProgress) {
-			// TODO interrupt and zoom to new target
-			return;
-		}
+	// set running zoom to new target
+	zoomTo(targetTileSize, finishedCallback) {
 		targetTileSize = Math.round(targetTileSize);
 		if (targetTileSize % 2 === 0) {
 			// scene is centered on tile center;
@@ -44,11 +38,20 @@ export default class CanvasView {
 		} else if (targetTileSize > maxTileSize) {
 			targetTileSize = maxTileSize;
 		}
+
+		// remove existing zoom step function
+		this.preDrawCallbacks = this.preDrawCallbacks.filter(function(fn) {
+			return !fn.zoomStepper;
+		});
+
 		if (targetTileSize === this.tileSize) {
+			if (typeof finishedCallback === 'function') {
+				finishedCallback();
+			}
 			return;
 		}
-		this.zoomInProgress = true;
 
+		// build new step function
 		let initialTileSize = this.tileSize;
 		let difference = targetTileSize - initialTileSize;
 		let animStartMillis = (new Date()).getTime();
@@ -63,58 +66,81 @@ export default class CanvasView {
 				console.log('tile size', this.tileSize);
 				this.zoomInProgress = false;
 				this.requireRedraw();
+				if (typeof finishedCallback === 'function') {
+					finishedCallback();
+				}
 			}
 		}).bind(this);
+		stepFunction.zoomStepper = true;
 		this.requireRedraw(stepFunction);
 	}
 
-	panUp() {
-		this.panTo({x: this.panX, y: this.panY - 1});
+	panUp(n = 1) {
+		this.panTo({y: this.targetY - Math.round(n)});
 	}
 
-	panRight() {
-		this.panTo({x: this.panX + 1, y: this.panY});
+	panRight(n = 1) {
+		this.panTo({x: this.targetX + Math.round(n)});
 	}
 
-	panDown() {
-		this.panTo({x: this.panX, y: this.panY + 1});
+	panDown(n = 1) {
+		this.panTo({y: this.targetY + Math.round(n)});
 	}
 
-	panLeft() {
-		this.panTo({x: this.panX - 1, y: this.panY});
+	panLeft(n = 1) {
+		this.panTo({x: this.targetX - Math.round(n)});
 	}
 
-	panTo({x: targetX, y: targetY}) {
-		if (this.panInProgress) {
-			// TODO interrupt and pan to new target
+	// set running pan to nearest point
+	panStop() {
+		if (this.preDrawCallbacks.some(function(fn){ return fn.panStepper; })) {
+			this.panTo({x: this.panX, y: this.panY});
+		}
+	}
+
+	// set running pan to new target
+	panTo({x = this.targetX, y = this.targetY}, finishedCallback) {
+		this.targetX = Math.round(x);
+		this.targetY = Math.round(y);
+
+		// remove existing panning step function
+		this.preDrawCallbacks = this.preDrawCallbacks.filter(function(fn) {
+			return !fn.panStepper;
+		});
+
+		if (this.targetX === this.panX && this.targetY === this.panY) {
+			if (typeof finishedCallback === 'function') {
+				finishedCallback();
+			}
 			return;
 		}
-		targetX = Math.round(targetX);
-		targetY = Math.round(targetY);
-		if (targetX === this.panX && targetY === this.panY) {
-			return;
-		}
-		this.panInProgress = true;
 
+		// build new step function
 		let initialX = this.panX, initialY = this.panY;
-		let diffX = targetX - initialX, diffY = targetY - initialY;
+		let diffX = this.targetX - initialX, diffY = this.targetY - initialY;
 		let hypotenuse = Math.sqrt(diffX*diffX + diffY*diffY);
 		let animMillis = hypotenuse * panAnimPerTileMillis;
 		let animStartMillis = (new Date()).getTime();
 		let stepFunction = (function() {
 			var percent = (this.lastRedrawTime - animStartMillis) / animMillis;
-			if (percent < 0) { percent = 0; }
-			else if (percent > 1) { percent = 1; }
-			this.panX = initialX + (percent * diffX);
-			this.panY = initialY + (percent * diffY);
+			if (percent < 0) {
+				percent = 0;
+			}
 			if (percent < 1) {
+				this.panX = initialX + (percent * diffX);
+				this.panY = initialY + (percent * diffY);
 				this.requireRedraw(stepFunction);
 			} else {
+				this.panX = this.targetX;
+				this.panY = this.targetY;
 				console.log('pan center', this.panX, this.panY);
-				this.panInProgress = false;
 				this.requireRedraw();
+				if (typeof finishedCallback === 'function') {
+					finishedCallback();
+				}
 			}
 		}).bind(this);
+		stepFunction.panStepper = true;
 		this.requireRedraw(stepFunction);
 	}
 
@@ -126,6 +152,7 @@ export default class CanvasView {
 			this.postDrawCallbacks.push(postDrawCallback);
 		}
 		if (this.redrawRequired) {
+			// redraw already pending
 			return;
 		}
 		this.redrawRequired = true;
@@ -138,11 +165,6 @@ export default class CanvasView {
 	}
 
 	redraw() {
-		if (++this.debugRuntime > 10000) {
-			$(this.canvas).remove();
-			return;
-		}
-
 		this.redrawRequired = false;
 		this.lastRedrawTime = (new Date()).getTime();
 
@@ -173,7 +195,7 @@ export default class CanvasView {
 			c2d.moveTo(x, 0);
 			c2d.lineTo(x, h);
 		}
-		let y = ((h-tileSize)/2)%tileSize - tileSize*(this.panY%1)
+		let y = ((h-tileSize)/2)%tileSize - tileSize*(this.panY%1);
 		for (; y < h; y += tileSize) {
 			c2d.moveTo(0, y);
 			c2d.lineTo(w, y);

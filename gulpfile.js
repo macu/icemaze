@@ -32,6 +32,10 @@ gulp.task('js', function() {
 			format: 'iife', // immediately invoked function expression
 			dest: 'js/compiled.js',
 			sourceMap: true,
+			globals: {
+				jquery: '$',
+				hammerjs: 'Hammer',
+			},
 		});
 	});
 });
