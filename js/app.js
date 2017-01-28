@@ -3,11 +3,26 @@ import Hammer from 'hammerjs';
 import CanvasView from './render';
 import Maze from './maze';
 
-var $canvas = $('canvas'), canvas = $canvas[0];
-var view = new CanvasView(canvas);
-window.canvasview = view;
+let $canvas = $('canvas'), canvas = $canvas[0];
+let maze = new Maze(100, 100);
+// maze.randomScatter('block');
+let view = new CanvasView(canvas);
+window.view = view;
 
-var hammer = new Hammer.Manager($canvas[0], {
+$.notify.addStyle('plain', {
+	html: '<div><span data-notify-text/></div>',
+	classes: {
+		base: {
+			'white-space': 'nowrap',
+			'background-color': 'lightblue',
+			'padding': '5px',
+			'text-align': 'right',
+		},
+	},
+});
+$.notify.defaults({style: 'plain'});
+
+let hammer = new Hammer.Manager($canvas[0], {
 	recognizers: [
 		[Hammer.Swipe],
 		[Hammer.Tap],
@@ -25,7 +40,11 @@ hammer.on('swipeup swiperight swipedown swipeleft', function(e) {
 	}
 });
 hammer.on('tap', function(e) {
-	view.panStop();
+	if (!view.panStop()) {
+		let {x, y} = view.getTileCoords(e.center);
+		$.notify('tap ('+x+', '+y+')');
+		console.log('tap', x, y);
+	}
 });
 hammer.on('doubletap', function(e) {
 	console.log(e.type, arguments);
