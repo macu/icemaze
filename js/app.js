@@ -9,6 +9,19 @@ let maze = new Maze(100, 100);
 let view = new CanvasView(canvas);
 window.view = view;
 
+$.notify.addStyle('plain', {
+	html: '<div><span data-notify-text/></div>',
+	classes: {
+		base: {
+			'white-space': 'nowrap',
+			'background-color': 'lightblue',
+			'padding': '5px',
+			'text-align': 'right',
+		},
+	},
+});
+$.notify.defaults({style: 'plain'});
+
 let hammer = new Hammer.Manager($canvas[0], {
 	recognizers: [
 		[Hammer.Swipe],
@@ -29,6 +42,7 @@ hammer.on('swipeup swiperight swipedown swipeleft', function(e) {
 hammer.on('tap', function(e) {
 	if (!view.panStop()) {
 		let {x, y} = view.getTileCoords(e.center);
+		$.notify('tap ('+x+', '+y+')');
 		console.log('tap', x, y);
 	}
 });
