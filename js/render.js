@@ -1,17 +1,19 @@
 import $ from 'jquery';
+import logo from './logo';
 
 const minTileSize = 9;
 const maxTileSize = 61;
 const frameMillis = 1000 / 60;
 const zoomAnimMillis = 1000 / 4;
 const panAnimPerTileMillis = 1000 / 10;
+const debug = false;
 
 export default class CanvasView {
 	constructor(canvas) {
 		this.canvas = canvas;
-		this.targetX = 0; // current pan target
+		this.targetX = 0; // current pan target center tile
 		this.targetY = 0;
-		this.panX = 0; // actual pan point
+		this.panX = 0; // current actual pan point in tile coordinates
 		this.panY = 0;
 		this.tileSize = 21;
 		this.redrawRequired = false;
@@ -19,6 +21,40 @@ export default class CanvasView {
 		this.preDrawCallbacks = [];
 		this.postDrawCallbacks = [];
 		this.requireRedraw();
+	}
+
+	// returns tile coordinates corresponding to given canvas coordinates
+	getTileCoords({x: canvasX, y: canvasY}) {
+		return {
+			x: Math.round(((canvasX - this.canvas.width/2) + (this.panX*this.tileSize)) / this.tileSize),
+			y: Math.round(((this.canvas.height/2 - canvasY) + (this.panY*this.tileSize)) / this.tileSize),
+		};
+	}
+
+	// returns canvas coordinates of top-left corner of specified tile
+	getCanvasCoords({x: tileX, y: tileY}) {
+		return {
+			x: (((tileX * this.tileSize) - (this.panX*this.tileSize)) + this.canvas.width/2) - this.tileSize/2,
+			y: -(((tileY * this.tileSize) - (this.panY*this.tileSize)) - this.canvas.height/2) - this.tileSize/2,
+		};
+	}
+
+	// returns the viewport rect {x, y, w, h} in tile coordinates
+	getVisibleRect() {
+		let bottomLeft = this.getTileCoords({x: 0, y: this.canvas.height});
+		return {
+			x: bottomLeft.x,
+			y: bottomLeft.y,
+			w: Math.ceil(this.canvas.width / this.tileSize),
+			h: Math.ceil(this.canvas.height / this.tileSize),
+		};
+	}
+
+	fillTile(point, fillStyle = 'blue') {
+		let {x, y} = this.getCanvasCoords(point);
+		let c2d = this.canvas.getContext('2d');
+		c2d.fillStyle = fillStyle;
+		c2d.fillRect(x, y, this.tileSize, this.tileSize);
 	}
 
 	zoom(factor) {
@@ -76,7 +112,7 @@ export default class CanvasView {
 	}
 
 	panUp(n = 1) {
-		this.panTo({y: this.targetY - Math.round(n)});
+		this.panTo({y: this.targetY + Math.round(n)});
 	}
 
 	panRight(n = 1) {
@@ -84,7 +120,7 @@ export default class CanvasView {
 	}
 
 	panDown(n = 1) {
-		this.panTo({y: this.targetY + Math.round(n)});
+		this.panTo({y: this.targetY - Math.round(n)});
 	}
 
 	panLeft(n = 1) {
@@ -95,7 +131,9 @@ export default class CanvasView {
 	panStop() {
 		if (this.preDrawCallbacks.some(function(fn){ return fn.panStepper; })) {
 			this.panTo({x: this.panX, y: this.panY});
+			return true;
 		}
+		return false;
 	}
 
 	// set running pan to new target
@@ -173,6 +211,8 @@ export default class CanvasView {
 		preDrawCallbacks.forEach(function(cb){ cb(); });
 
 		this.drawGrid();
+		logo.draw(this.canvas);
+		this.fillTile({x: 0, y: 0});
 
 		let postDrawCallbacks = this.postDrawCallbacks;
 		this.postDrawCallbacks = [];
@@ -185,9 +225,11 @@ export default class CanvasView {
 
 		c2d.clearRect(0, 0, w, h);
 
-		c2d.lineWidth = 1;
-		c2d.strokeStyle = 'blue';
-		c2d.strokeRect(0, 0, w, h);
+		if (debug) {
+			c2d.lineWidth = 1;
+			c2d.strokeStyle = 'green';
+			c2d.strokeRect(0, 0, w, h);
+		}
 
 		c2d.beginPath();
 		let x = ((w-tileSize)/2)%tileSize - tileSize*(this.panX%1);
@@ -195,7 +237,7 @@ export default class CanvasView {
 			c2d.moveTo(x, 0);
 			c2d.lineTo(x, h);
 		}
-		let y = ((h-tileSize)/2)%tileSize - tileSize*(this.panY%1);
+		let y = ((h-tileSize)/2)%tileSize + tileSize*(this.panY%1);
 		for (; y < h; y += tileSize) {
 			c2d.moveTo(0, y);
 			c2d.lineTo(w, y);
