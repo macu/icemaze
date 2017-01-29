@@ -145,8 +145,12 @@ export default class CanvasView {
 	}
 
 	freePan(canvasDiffX, canvasDiffY) {
-		this.panX -= canvasDiffX / this.tileSize;
-		this.panY += canvasDiffY / this.tileSize;
+		let diffX = canvasDiffX / this.tileSize;
+		let diffY = canvasDiffY / this.tileSize;
+		this.panX -= diffX;
+		this.panY += diffY;
+		this.targetX -= diffX;
+		this.targetY += diffY;
 		this.requireRedraw();
 	}
 
