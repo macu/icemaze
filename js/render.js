@@ -61,6 +61,23 @@ export default class CanvasView {
 		this.zoomTo(this.tileSize * factor);
 	}
 
+	freeZoom(factor) {
+		let targetTileSize = Math.round(this.tileSize * factor);
+		if (targetTileSize % 2 === 0) {
+			// scene is centered on tile center;
+			// use odd number for target tile size so final view is pixel perfect
+			targetTileSize += 1;
+		}
+		if (targetTileSize < minTileSize) {
+			targetTileSize = minTileSize;
+		} else if (targetTileSize > maxTileSize) {
+			targetTileSize = maxTileSize;
+		}
+
+		this.tileSize = targetTileSize;
+		this.requireRedraw();
+	}
+
 	// set running zoom to new target
 	zoomTo(targetTileSize, finishedCallback) {
 		targetTileSize = Math.round(targetTileSize);
@@ -127,13 +144,15 @@ export default class CanvasView {
 		this.panTo({x: this.targetX - Math.round(n)});
 	}
 
+	freePan(canvasDiffX, canvasDiffY) {
+		this.panX -= canvasDiffX / this.tileSize;
+		this.panY += canvasDiffY / this.tileSize;
+		this.requireRedraw();
+	}
+
 	// set running pan to nearest point
-	panStop() {
-		if (this.preDrawCallbacks.some(function(fn){ return fn.panStepper; })) {
-			this.panTo({x: this.panX, y: this.panY});
-			return true;
-		}
-		return false;
+	panCenter() {
+		this.panTo({x: this.panX, y: this.panY});
 	}
 
 	// set running pan to new target
