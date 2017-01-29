@@ -54,7 +54,7 @@ hammer.on('pinchstart pinchmove', function(e) {
 	if (e.type === 'pinchstart') {
 		lastScale = 1;
 	}
-	view.freeZoom(1 - (e.scale - lastScale));
+	view.freeZoom(1 - (e.scale - lastScale)/10);
 	lsatScale = e.scale;
 });
 hammer.on('tap', function(e) {
