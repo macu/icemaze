@@ -50,12 +50,12 @@ hammer.on('panend', function(e) {
 	view.panCenter();
 });
 let lastScale;
-hammer.on('pinchstart pinchmove', function(e) {
+hammer.on('pinchmove', function(e) {
 	if (e.type === 'pinchstart') {
 		lastScale = 1;
 	}
 	view.freeZoom(1 - (e.scale - lastScale)/10);
-	lsatScale = e.scale;
+	lastScale = e.scale;
 });
 hammer.on('tap', function(e) {
 	$.notify(e.type);
