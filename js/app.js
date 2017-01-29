@@ -40,7 +40,6 @@ hammer.on('panstart panmove', function(e) {
 	if (e.type === 'panstart') {
 		lastPan = {x: 0, y: 0};
 	}
-	console.log(e.type, e);
 	view.freePan(e.deltaX - lastPan.x, e.deltaY - lastPan.y);
 	lastPan.x = e.deltaX;
 	lastPan.y = e.deltaY;
@@ -53,14 +52,12 @@ hammer.on('pinchstart pinchmove', function(e) {
 	if (e.type === 'pinchstart') {
 		scaleStartTileSize = view.tileSize;
 	}
-	view.freeZoom(scaleStartTileSize * e.scale);
+	view.freeZoom(scaleStartTileSize * e.scale, true);
 });
 hammer.on('tap', function(e) {
-	if (!view.panCenter()) {
-		let {x, y} = view.getTileCoords(e.center);
-		$.notify('tap ('+x+', '+y+')');
-		console.log('tap', x, y);
-	}
+	let {x, y} = view.getTileCoords(e.center);
+	$.notify('tap ('+x+', '+y+')');
+	console.log('tap', x, y);
 });
 hammer.on('doubletap', function(e) {
 	console.log(e.type, arguments);

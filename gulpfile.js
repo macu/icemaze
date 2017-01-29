@@ -59,10 +59,10 @@ gulp.task('sass:watch', function() {
 	gulp.watch('css/**/*.scss', ['sass']);
 });
 
-gulp.task('devserver', function() {
+gulp.task('server', function() {
 	connect.server({
 		port: 8080,
 	});
 });
 
-gulp.task('default', ['js', 'js:watch', 'sass', 'sass:watch', 'devserver']);
+gulp.task('default', ['js', 'js:watch', 'sass', 'sass:watch', 'server']);
