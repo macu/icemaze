@@ -49,13 +49,14 @@ hammer.on('panend', function(e) {
 	$.notify(e.type);
 	view.panCenter();
 });
-let scaleStartTileSize;
+let lastScale;
 hammer.on('pinchstart pinchmove', function(e) {
 	if (e.type === 'pinchstart') {
-		scaleStartTileSize = view.tileSize;
+		lastScale = 1;
 	}
 	$.notify(e.type + ' ' + e.scale);
-	view.freeZoom(scaleStartTileSize * e.scale, true);
+	view.freeZoom(1-(2+e.scale-lastScale)/3);
+	lastScale = e.scale;
 });
 hammer.on('tap', function(e) {
 	$.notify(e.type);

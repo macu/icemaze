@@ -61,8 +61,8 @@ export default class CanvasView {
 		this.zoomTo(this.tileSize * factor);
 	}
 
-	freeZoom(factor, factorIsTileSize) {
-		let targetTileSize = Math.round(factorIsTileSize ? factor : this.tileSize * factor);
+	freeZoom(factor) {
+		let targetTileSize = Math.round(this.tileSize * factor);
 		if (targetTileSize % 2 === 0) {
 			// scene is centered on tile center;
 			// use odd number for target tile size so final view is pixel perfect
