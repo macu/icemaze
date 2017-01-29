@@ -44,11 +44,8 @@ hammer.on('panstart panmove', function(e) {
 	lastPan.x = e.deltaX;
 	lastPan.y = e.deltaY;
 });
-hammer.on('panend', function(e) {
-	view.panCenter();
-});
 let scaleStartTileSize;
-hammer.on('pinchstart pinchmove', function(e) {
+hammer.on('pinchstart pinchmove pinchend', function(e) {
 	if (e.type === 'pinchstart') {
 		scaleStartTileSize = view.tileSize;
 	}
