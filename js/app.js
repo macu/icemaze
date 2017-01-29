@@ -18,29 +18,45 @@ $.notify.addStyle('plain', {
 			'padding': '5px',
 			'text-align': 'right',
 		},
+		error: {},
+		success: {},
+		info: {},
+		warning: {},
 	},
 });
 $.notify.defaults({style: 'plain'});
 
 let hammer = new Hammer.Manager($canvas[0], {
 	recognizers: [
-		[Hammer.Swipe],
+		[Hammer.Pan],
 		[Hammer.Tap],
 		[Hammer.Tap, { event: 'doubletap', taps: 2 }, ['tap']],
 		[Hammer.Press],
 		[Hammer.Pinch],
 	]
 });
-hammer.on('swipeup swiperight swipedown swipeleft', function(e) {
-	switch (e.type) {
-		case 'swipeup': view.panDown(); break;
-		case 'swiperight': view.panLeft(); break;
-		case 'swipedown': view.panUp(); break;
-		case 'swipeleft': view.panRight(); break;
+let lastPan;
+hammer.on('panstart panmove', function(e) {
+	if (e.type === 'panstart') {
+		lastPan = {x: 0, y: 0};
 	}
+	console.log(e.type, e);
+	view.freePan(e.deltaX - lastPan.x, e.deltaY - lastPan.y);
+	lastPan.x = e.deltaX;
+	lastPan.y = e.deltaY;
+});
+hammer.on('panend', function(e) {
+	view.panCenter();
+});
+let scaleStartTileSize;
+hammer.on('pinchstart pinchmove', function(e) {
+	if (e.type === 'pinchstart') {
+		scaleStartTileSize = view.tileSize;
+	}
+	view.freeZoom(scaleStartTileSize * e.scale);
 });
 hammer.on('tap', function(e) {
-	if (!view.panStop()) {
+	if (!view.panCenter()) {
 		let {x, y} = view.getTileCoords(e.center);
 		$.notify('tap ('+x+', '+y+')');
 		console.log('tap', x, y);
@@ -57,17 +73,10 @@ Mousetrap.bind('up', function() { view.panUp(); });
 Mousetrap.bind('right', function() { view.panRight(); });
 Mousetrap.bind('down', function() { view.panDown(); });
 Mousetrap.bind('left', function() { view.panLeft(); });
-Mousetrap.bind('enter', function() { view.panStop(); });
-
-hammer.on('pinchout', function(e) { view.zoom(1.2); });
-hammer.on('pinchin', function(e) { view.zoom(0.8); });
+Mousetrap.bind('enter', function() { view.panCenter(); });
 
 $(window).on('mousewheel', function(e) {
-	if (e.deltaY > 0) {
-		view.zoom(1.2);
-	} else if (e.deltaY) {
-		view.zoom(0.8);
-	}
+	view.freeZoom(e.deltaY < 0 ? 1.1 : 0.9);
 });
 
 function resizeCanvas() {
