@@ -39,18 +39,24 @@ let lastPan;
 hammer.on('panstart panmove', function(e) {
 	if (e.type === 'panstart') {
 		lastPan = {x: 0, y: 0};
+		$.notify(e.type);
 	}
 	view.freePan(e.deltaX - lastPan.x, e.deltaY - lastPan.y);
 	lastPan.x = e.deltaX;
 	lastPan.y = e.deltaY;
 });
 hammer.on('panend', function(e) {
+	$.notify(e.type);
 	view.panCenter();
 });
 let scaleStartTileSize;
-hammer.on('pinchstart pinchmove', function(e) {
+hammer.on('pinchstart pinchmove pinchend', function(e) {
 	if (e.type === 'pinchstart') {
 		scaleStartTileSize = view.tileSize;
+		$.notify(e.type);
+	}
+	if (e.type === 'pinchend') {
+		$.notify(e.type);
 	}
 	view.freeZoom(scaleStartTileSize * e.scale, true);
 });
