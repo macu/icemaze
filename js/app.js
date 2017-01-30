@@ -49,7 +49,7 @@ hammer.on('pinchstart pinchmove pinchend', function(e) {
 	if (e.type === 'pinchstart') {
 		scaleStartTileSize = view.tileSize;
 	}
-	view.freeZoom(scaleStartTileSize * e.scale, true);
+	view.freeZoom(e.center, scaleStartTileSize * e.scale);
 });
 hammer.on('tap', function(e) {
 	let {x, y} = view.getTileCoords(e.center);
@@ -63,14 +63,15 @@ hammer.on('press', function(e) {
 	console.log(e.type, arguments);
 });
 
-Mousetrap.bind('up', function() { view.panUp(); });
-Mousetrap.bind('right', function() { view.panRight(); });
-Mousetrap.bind('down', function() { view.panDown(); });
-Mousetrap.bind('left', function() { view.panLeft(); });
-Mousetrap.bind('enter', function() { view.panCenter(); });
+// TODO make directions invert user-configurable
+Mousetrap.bind('up', function() { view.panDown(); });
+Mousetrap.bind('right', function() { view.panLeft(); });
+Mousetrap.bind('down', function() { view.panUp(); });
+Mousetrap.bind('left', function() { view.panRight(); });
 
+// TODO make direction invert user-configurable
 $(window).on('mousewheel', function(e) {
-	view.freeZoom(e.deltaY < 0 ? 1.1 : 0.9);
+	view.freeZoom({x: e.clientX, y: e.clientY}, view.tileSize * (e.deltaY > 0 ? 1.1 : 0.9));
 });
 
 function resizeCanvas() {
