@@ -61,8 +61,8 @@ export default class CanvasView {
 		this.zoomTo(this.tileSize * factor);
 	}
 
-	freeZoom(factor, isTileSize) {
-		let targetTileSize = Math.round(isTileSize ? factor : this.tileSize * factor);
+	freeZoom(center, targetTileSize) {
+		targetTileSize = Math.round(targetTileSize);
 		if (targetTileSize % 2 === 0) {
 			// scene is centered on tile center;
 			// use odd number for target tile size so final view is pixel perfect
@@ -73,6 +73,15 @@ export default class CanvasView {
 		} else if (targetTileSize > maxTileSize) {
 			targetTileSize = maxTileSize;
 		}
+
+		// update pan and target
+		let factor = (targetTileSize / this.tileSize) - 1;
+		let dx = ((center.x - this.canvas.width/2)/targetTileSize) * factor;
+		let dy = ((this.canvas.height/2 - center.y)/targetTileSize) * factor;
+		this.panX += dx;
+		this.panY += dy;
+		this.targetX += dx;
+		this.targetY += dy;
 
 		this.tileSize = targetTileSize;
 		this.requireRedraw();
@@ -260,7 +269,7 @@ export default class CanvasView {
 			c2d.moveTo(x, 0);
 			c2d.lineTo(x, h);
 		}
-		let y = ((h-tileSize)/2)%tileSize + tileSize*(this.panY%1);
+		let y = ((h-tileSize)/2)%tileSize - tileSize*(1-(this.panY%1));
 		for (; y < h; y += tileSize) {
 			c2d.moveTo(0, y);
 			c2d.lineTo(w, y);
