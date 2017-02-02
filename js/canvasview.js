@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import MazeView from './mazeview';
 import logo from './logo';
 
 const minTileSize = 9;
@@ -9,7 +10,7 @@ const panAnimPerTileMillis = 1000 / 10;
 const debug = false;
 
 export default class CanvasView {
-	constructor(canvas) {
+	constructor(canvas, maze) {
 		this.canvas = canvas;
 		this.targetX = 0; // current pan target center tile
 		this.targetY = 0;
@@ -20,6 +21,7 @@ export default class CanvasView {
 		this.lastRedrawTime = 0;
 		this.preDrawCallbacks = [];
 		this.postDrawCallbacks = [];
+		this.mazeView = new MazeView(maze, this.getVisibleRect());
 		this.requireRedraw();
 	}
 
@@ -45,8 +47,8 @@ export default class CanvasView {
 		return {
 			x: bottomLeft.x,
 			y: bottomLeft.y,
-			w: Math.ceil(this.canvas.width / this.tileSize),
-			h: Math.ceil(this.canvas.height / this.tileSize),
+			w: Math.ceil(this.canvas.width / this.tileSize) + 1,
+			h: Math.ceil(this.canvas.height / this.tileSize) + 1,
 		};
 	}
 
@@ -84,10 +86,13 @@ export default class CanvasView {
 		this.targetY += dy;
 
 		this.tileSize = targetTileSize;
+		this.mazeView.refocus(this.getVisibleRect());
 		this.requireRedraw();
 	}
 
-	// set running zoom to new target
+	// TODO replace zoomTo/panTo with unified centerOn
+
+	// sets running zoom to new target
 	zoomTo(targetTileSize, finishedCallback) {
 		targetTileSize = Math.round(targetTileSize);
 		if (targetTileSize % 2 === 0) {
@@ -122,6 +127,7 @@ export default class CanvasView {
 			if (percent < 0) { percent = 0; }
 			else if (percent > 1) { percent = 1; }
 			this.tileSize = initialTileSize + (percent * difference);
+			this.mazeView.refocus(this.getVisibleRect());
 			if (percent < 1) {
 				this.requireRedraw(stepFunction);
 			} else {
@@ -160,15 +166,16 @@ export default class CanvasView {
 		this.panY += diffY;
 		this.targetX -= diffX;
 		this.targetY += diffY;
+		this.mazeView.refocus(this.getVisibleRect());
 		this.requireRedraw();
 	}
 
-	// set running pan to nearest point
+	// sets running pan to nearest point
 	panCenter() {
 		this.panTo({x: this.panX, y: this.panY});
 	}
 
-	// set running pan to new target
+	// sets running pan to new target
 	panTo({x = this.targetX, y = this.targetY}, finishedCallback) {
 		this.targetX = Math.round(x);
 		this.targetY = Math.round(y);
@@ -199,10 +206,12 @@ export default class CanvasView {
 			if (percent < 1) {
 				this.panX = initialX + (percent * diffX);
 				this.panY = initialY + (percent * diffY);
+				this.mazeView.refocus(this.getVisibleRect());
 				this.requireRedraw(stepFunction);
 			} else {
 				this.panX = this.targetX;
 				this.panY = this.targetY;
+				this.mazeView.refocus(this.getVisibleRect());
 				console.log('pan center', this.panX, this.panY);
 				this.requireRedraw();
 				if (typeof finishedCallback === 'function') {
@@ -242,9 +251,21 @@ export default class CanvasView {
 		this.preDrawCallbacks = [];
 		preDrawCallbacks.forEach(function(cb){ cb(); });
 
+		let c2d = this.c2d || (this.c2d = this.canvas.getContext('2d'));
+		c2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		this.drawGrid();
+		this.mazeView.drawTiles(function(x, y, cell) {
+			if (cell.startTile) {
+				this.fillTile({x, y}, 'blue');
+			} else if (cell.endTile) {
+				this.fillTile({x, y}, 'green');
+			} else if (cell.ground) {
+				this.fillTile({x, y}, 'brown');
+			} else if (cell.block) {
+				this.fillTile({x, y}, 'black');
+			}
+		}.bind(this));
 		logo.draw(this.canvas);
-		this.fillTile({x: 0, y: 0});
 
 		let postDrawCallbacks = this.postDrawCallbacks;
 		this.postDrawCallbacks = [];
@@ -253,9 +274,7 @@ export default class CanvasView {
 
 	drawGrid() {
 		let w = this.canvas.width, h = this.canvas.height, tileSize = this.tileSize;
-		let c2d = this.canvas.getContext('2d');
-
-		c2d.clearRect(0, 0, w, h);
+		let c2d = this.c2d;
 
 		if (debug) {
 			c2d.lineWidth = 1;

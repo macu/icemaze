@@ -6,17 +6,33 @@ export default class Maze {
 		this.height = Math.round(height);
 	}
 
-	get(x, y, prop) {
+	get(x, y, prop, create = false) {
 		x = x < 0 ? this.width+(x%this.width) : x%this.width;
 		y = y < 0 ? this.height+(y%this.height) : y%this.height;
-		let row = this.grid[y] || (this.grid[y].cellCount=0, this.grid[y] = []);
-		let cell = row[x] || (row.cellCount++, row[x] = {});
-		return prop ? cell[prop] : cell;
+		if (create) {
+			let created = false;
+			let row = this.grid[y];
+			if (!row) {
+				this.grid[y] = row = [];
+				row.cellCount = 0;
+			}
+			let cell = row[x];
+			if (cell) {
+				return prop ? cell[prop] : {cell};
+			}
+			row[x] = cell = {};
+			row.cellCount++;
+			return prop ? cell[prop] : {cell, created: true};
+		}
+		let row = this.grid[y] || [];
+		let cell = row[x], safeCell = cell || {};
+		return prop ? safeCell[prop] : {cell: safeCell, fake: !cell};
 	}
 
 	toggle(x, y, prop, state) {
-		let cell = this.get(x, y);
-		return (cell[prop] = (state === undefined ? !cell[prop] : state));
+		let r = this.get(x, y, null, true);
+		r.cell[prop] = state === undefined ? !r.cell[prop] : state;
+		return r;
 	}
 
 	clear(x, y) {
@@ -37,7 +53,9 @@ export default class Maze {
 					this.grid[y] = undefined;
 				}
 			}
+			return true; // something got deleted
 		}
+		return false; // nothing was there
 	}
 
 	// randomCover(prop) {
