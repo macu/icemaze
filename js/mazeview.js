@@ -10,6 +10,8 @@ export default class MazeView {
 		if (w <= 0 || w%1) { throw "width must be an integer > 0"; }
 		if (h <= 0 || h%1) { throw "height must be an integer > 0"; }
 
+		maze.mazeView = this; // backreference hack so maze can call up
+
 		this.maze = maze;
 		this.width = 1;
 		this.height = 1;
@@ -91,6 +93,19 @@ export default class MazeView {
 				this.firstRow = firstRow;
 			}
 		}
+	}
+
+	reload() {
+		let row = this.firstRow;
+		while (row) {
+			let col = row.firstCol;
+			while (col) {
+				col.cell = this.maze.get(col.x, row.y).cell;
+				col = col.nextCol;
+			}
+			row = row.nextRow;
+		}
+		if (this.canvasView) this.canvasView.requireRedraw();
 	}
 
 	get(x, y, prop) {

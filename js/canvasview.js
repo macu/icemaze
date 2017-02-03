@@ -12,6 +12,7 @@ const debug = false;
 export default class CanvasView {
 	constructor(canvas, maze) {
 		this.canvas = canvas;
+		this.c2d = canvas.getContext('2d');
 		this.targetX = 0; // current pan target center tile
 		this.targetY = 0;
 		this.panX = 0; // current actual pan point in tile coordinates
@@ -22,6 +23,7 @@ export default class CanvasView {
 		this.preDrawCallbacks = [];
 		this.postDrawCallbacks = [];
 		this.mazeView = new MazeView(maze, this.getVisibleRect());
+		this.mazeView.canvasView = this; // backreference hack so mazeview can call up
 		this.requireRedraw();
 	}
 
@@ -54,9 +56,8 @@ export default class CanvasView {
 
 	fillTile(point, fillStyle = 'blue') {
 		let {x, y} = this.getCanvasCoords(point);
-		let c2d = this.canvas.getContext('2d');
-		c2d.fillStyle = fillStyle;
-		c2d.fillRect(x, y, this.tileSize, this.tileSize);
+		this.c2d.fillStyle = fillStyle;
+		this.c2d.fillRect(x, y, this.tileSize, this.tileSize);
 	}
 
 	zoom(factor) {
@@ -251,18 +252,17 @@ export default class CanvasView {
 		this.preDrawCallbacks = [];
 		preDrawCallbacks.forEach(function(cb){ cb(); });
 
-		let c2d = this.c2d || (this.c2d = this.canvas.getContext('2d'));
-		c2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		this.c2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		this.drawGrid();
 		this.mazeView.drawTiles(function(x, y, cell) {
 			if (cell.startTile) {
 				this.fillTile({x, y}, 'blue');
 			} else if (cell.endTile) {
 				this.fillTile({x, y}, 'green');
-			} else if (cell.ground) {
-				this.fillTile({x, y}, 'brown');
 			} else if (cell.block) {
 				this.fillTile({x, y}, 'black');
+			} else if (cell.ground) {
+				this.fillTile({x, y}, 'brown');
 			}
 		}.bind(this));
 		logo.draw(this.canvas);

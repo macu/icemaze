@@ -4,8 +4,7 @@ import CanvasView from './canvasview';
 import Maze from './maze';
 
 let $canvas = $('canvas'), canvas = $canvas[0];
-let maze = new Maze(100, 100);
-console.log(maze.toggle(0, 0, 'block'));
+let maze = new Maze(100, 100, 'a');
 // maze.randomScatter('block');
 let cv = new CanvasView(canvas, maze);
 
@@ -58,26 +57,24 @@ hammer.on('pinchstart pinchmove pinchend', function(e) {
 		scaleStartTileSize = cv.tileSize;
 	}
 	cv.freeZoom(e.center, scaleStartTileSize * e.scale);
-	if (e.type === 'pinchend') {
-		console.log('zoom', cv.tileSize);
-	}
 });
 hammer.on('tap', function(e) {
 	let {x, y} = cv.getTileCoords(e.center);
-	$.notify('tap ' + x + ', ' + y);
-	console.log('tap', x, y);
-	cv.mazeView.toggle(x, y, 'block');
+	console.log(e.type, x, y);
+	cv.mazeView.toggle(x, y, 'ground');
 	cv.requireRedraw();
 });
 hammer.on('doubletap', function(e) {
 	let {x, y} = cv.getTileCoords(e.center);
-	$.notify('doubletap ' + x + ', ' + y);
-	console.log('doubletap', x, y);
-	cv.mazeView.toggle(x, y, 'ground');
+	console.log(e.type, x, y);
+	cv.mazeView.toggle(x, y, 'block');
 	cv.requireRedraw();
 });
 hammer.on('press', function(e) {
-	console.log(e.type, arguments);
+	let {x, y} = cv.getTileCoords(e.center);
+	console.log(e.type, x, y);
+	cv.mazeView.clear(x, y);
+	cv.requireRedraw();
 });
 
 // TODO make directions invert user-configurable
