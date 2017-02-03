@@ -15,7 +15,7 @@ gulp.task('js', function() {
 		entry: 'js/app.js',
 		cache: jsCache,
 		external: [
-			'jquery', 'hammerjs'
+			'jquery', 'hammerjs', 'dexie'
 		],
 		plugins: [
 			rollup_babel({
@@ -35,6 +35,7 @@ gulp.task('js', function() {
 			globals: {
 				jquery: '$',
 				hammerjs: 'Hammer',
+				dexie: 'Dexie',
 			},
 		});
 	});

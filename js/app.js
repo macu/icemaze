@@ -1,13 +1,17 @@
 import $ from 'jquery';
 import Hammer from 'hammerjs';
-import CanvasView from './render';
+import CanvasView from './canvasview';
 import Maze from './maze';
 
 let $canvas = $('canvas'), canvas = $canvas[0];
-let maze = new Maze(100, 100);
+let maze = new Maze(100, 100, 'a');
 // maze.randomScatter('block');
-let view = new CanvasView(canvas);
-window.view = view;
+let cv = new CanvasView(canvas, maze);
+
+// for debugging
+window.maze = maze;
+window.canvasView = cv;
+window.mazeView = cv.mazeView;
 
 $.notify.addStyle('plain', {
 	html: '<div><span data-notify-text/></div>',
@@ -40,44 +44,56 @@ hammer.on('panstart panmove', function(e) {
 	if (e.type === 'panstart') {
 		lastPan = {x: 0, y: 0};
 	}
-	view.freePan(e.deltaX - lastPan.x, e.deltaY - lastPan.y);
+	cv.freePan(e.deltaX - lastPan.x, e.deltaY - lastPan.y);
 	lastPan.x = e.deltaX;
 	lastPan.y = e.deltaY;
+});
+hammer.on('panend', function(e) {
+	console.log('pan', cv.getVisibleRect());
 });
 let scaleStartTileSize;
 hammer.on('pinchstart pinchmove pinchend', function(e) {
 	if (e.type === 'pinchstart') {
-		scaleStartTileSize = view.tileSize;
+		scaleStartTileSize = cv.tileSize;
 	}
-	view.freeZoom(e.center, scaleStartTileSize * e.scale);
+	cv.freeZoom(e.center, scaleStartTileSize * e.scale);
 });
 hammer.on('tap', function(e) {
-	let {x, y} = view.getTileCoords(e.center);
-	$.notify('tap ('+x+', '+y+')');
-	console.log('tap', x, y);
+	let {x, y} = cv.getTileCoords(e.center);
+	console.log(e.type, x, y);
+	cv.mazeView.toggle(x, y, 'ground');
+	cv.requireRedraw();
 });
 hammer.on('doubletap', function(e) {
-	console.log(e.type, arguments);
+	let {x, y} = cv.getTileCoords(e.center);
+	console.log(e.type, x, y);
+	cv.mazeView.toggle(x, y, 'block');
+	cv.requireRedraw();
 });
 hammer.on('press', function(e) {
-	console.log(e.type, arguments);
+	let {x, y} = cv.getTileCoords(e.center);
+	console.log(e.type, x, y);
+	cv.mazeView.clear(x, y);
+	cv.requireRedraw();
 });
 
 // TODO make directions invert user-configurable
-Mousetrap.bind('up', function() { view.panDown(); });
-Mousetrap.bind('right', function() { view.panLeft(); });
-Mousetrap.bind('down', function() { view.panUp(); });
-Mousetrap.bind('left', function() { view.panRight(); });
+Mousetrap.bind('up', function() { cv.panDown(); });
+Mousetrap.bind('right', function() { cv.panLeft(); });
+Mousetrap.bind('down', function() { cv.panUp(); });
+Mousetrap.bind('left', function() { cv.panRight(); });
 
 // TODO make direction invert user-configurable
 $(window).on('mousewheel', function(e) {
-	view.freeZoom({x: e.clientX, y: e.clientY}, view.tileSize * (e.deltaY > 0 ? 1.1 : 0.9));
+	cv.freeZoom({x: e.clientX, y: e.clientY}, cv.tileSize * (e.deltaY > 0 ? 1.1 : 0.9));
+	console.log('zoom', cv.tileSize);
 });
 
 function resizeCanvas() {
 	var w = $canvas.outerWidth(), h = $canvas.outerHeight(); // copy actual size
 	$canvas.attr({width: w, height: h}); // set width and height to actual size
-	view.requireRedraw();
+	cv.mazeView.refocus(cv.getVisibleRect());
+	cv.requireRedraw();
 }
 resizeCanvas();
 var resizeTimeout;
