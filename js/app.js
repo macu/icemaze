@@ -1,17 +1,23 @@
 import $ from 'jquery';
 import Hammer from 'hammerjs';
 import CanvasView from './canvasview';
-import Maze from './maze';
+import {Maze, db} from './maze';
 
 let $canvas = $('canvas'), canvas = $canvas[0];
-let maze = new Maze(100, 100, 'a');
-// maze.randomScatter('block');
+let maze = new Maze('a');
 let cv = new CanvasView(canvas, maze);
 
 // for debugging
+window.Maze = Maze;
 window.maze = maze;
+window.mazeDb = db;
 window.canvasView = cv;
 window.mazeView = cv.mazeView;
+window.loadMaze = function(m) {
+	window.maze = cv.mazeView.maze = maze = m;
+	m.mazeView = cv.mazeView;
+	cv.mazeView.reloadAll();
+};
 
 $.notify.addStyle('plain', {
 	html: '<div><span data-notify-text/></div>',
@@ -61,20 +67,17 @@ hammer.on('pinchstart pinchmove pinchend', function(e) {
 hammer.on('tap', function(e) {
 	let {x, y} = cv.getTileCoords(e.center);
 	console.log(e.type, x, y);
-	cv.mazeView.toggle(x, y, 'ground');
-	cv.requireRedraw();
+	maze.toggle(x, y, 'ground');
 });
 hammer.on('doubletap', function(e) {
 	let {x, y} = cv.getTileCoords(e.center);
 	console.log(e.type, x, y);
-	cv.mazeView.toggle(x, y, 'block');
-	cv.requireRedraw();
+	maze.toggle(x, y, 'block');
 });
 hammer.on('press', function(e) {
 	let {x, y} = cv.getTileCoords(e.center);
 	console.log(e.type, x, y);
-	cv.mazeView.clear(x, y);
-	cv.requireRedraw();
+	maze.clear(x, y);
 });
 
 // TODO make directions invert user-configurable

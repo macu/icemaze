@@ -1,16 +1,18 @@
 import Dexie from 'dexie';
 
-const db = new Dexie('mazes');
-db.version(1).stores({
+export const db = new Dexie('mazes');
+db.version( 1 ).stores({
 	cells: "[maze+x+y], maze, ground, block"
 });
 db.open().catch(err => {
 	console.error("Couldn't open database", err);
 });
 
-export default class Maze {
-
-	constructor(width, height, saveName) {
+export class Maze {
+	constructor(saveName, width=100, height=100) {
+		if (width <= 0 || height <= 0 || width%1 || height%1) {
+			throw "width and height must be positive integers";
+		}
 		this.grid = [];
 		this.width = Math.round(width);
 		this.height = Math.round(height);
@@ -21,13 +23,13 @@ export default class Maze {
 		}
 	}
 
-	_save(x, y, cell) {
+	_persist(x, y, cell) {
 		if (!this.saveName) {
 			return;
 		}
 		cell.maze = this.saveName;
-		cell.x = x < 0 ? this.width+(x%this.width) : x%this.width;
-		cell.y = y < 0 ? this.height+(y%this.height) : y%this.height;
+		cell.x = x;
+		cell.y = y;
 		db.cells.put(cell);
 	}
 
@@ -38,7 +40,7 @@ export default class Maze {
 		db.cells.delete([cell.maze, cell.x, cell.y]);
 	}
 
-	_restoreMaze(saveName, restoredCallback) {
+	_restoreMaze(saveName) {
 		let grid = this.grid;
 		let cells = db.cells.where('maze').equals(saveName).each(cell => {
 			let row = grid[cell.y];
@@ -51,15 +53,24 @@ export default class Maze {
 			}
 			row[cell.x] = cell;
 		}).then(function() {
-			if (this.mazeView) this.mazeView.reload();
+			console.log('Restored maze', saveName);
+			if (this.mazeView) {
+				this.mazeView.reloadAll();
+			}
 		}.bind(this)).catch(err => {
 			console.error('Failed to restore maze', err);
 		});
 	}
 
-	get(x, y, prop, create = false) {
+	_wrap(x, y) {
+		if (x%1 || y%1) { throw "x and y must be integers"; }
 		x = x < 0 ? this.width+(x%this.width) : x%this.width;
 		y = y < 0 ? this.height+(y%this.height) : y%this.height;
+		return [x, y];
+	}
+
+	get(x, y, prop, create = false) {
+		[x, y] = this._wrap(x, y);
 		if (create) {
 			let created = false;
 			let row = this.grid[y];
@@ -81,48 +92,34 @@ export default class Maze {
 	}
 
 	toggle(x, y, prop, state) {
+		[x, y] = this._wrap(x, y);
 		let r = this.get(x, y, null, true);
 		r.cell[prop] = state === undefined ? !r.cell[prop] : state;
-		this._save(x, y, r.cell);
+		this._persist(x, y, r.cell);
+		if (this.mazeView) {
+			this.mazeView.reload(x, y, r.cell);
+		}
 		return r;
 	}
 
 	clear(x, y) {
-		x = x < 0 ? this.width+(x%this.width) : x%this.width;
-		y = y < 0 ? this.height+(y%this.height) : y%this.height;
+		[x, y] = this._wrap(x, y);
 		let row = this.grid[y], cell = row ? row[x] : null;
 		if (cell) {
 			this._delete(cell);
-			if (x >= 0) {
-				row.splice(x, 1);
-			} else {
-				row[x] = undefined;
-			}
+			// don't splice to delete because it shifts subsequent indices down
+			row[x] = undefined;
 			row.cellCount--;
 			if (row.cellCount === 0) {
-				if (y >= 0) {
-					this.grid.splice(y, 1);
-				} else {
-					this.grid[y] = undefined;
-				}
+				this.grid[y] = undefined;
+			}
+			if (this.mazeView) {
+				this.mazeView.reload(x, y, null);
 			}
 			return true; // something got deleted
 		}
 		return false; // nothing was there
 	}
-
-	// randomCover(prop) {
-	// 	// TODO ensure prop is applied to at least one cell in every row and column
-	//
-	// 	let arr = new Array(this.width);
-	//
-	// 	let x = 0, y = 0;
-	// 	while (x < this.width && y < this.height) {
-	// 		if (x < this.width && y < this.height) {
-	//
-	// 		}
-	// 	}
-	//
-	// }
-
 }
+
+export default Maze;
