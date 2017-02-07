@@ -5,13 +5,7 @@ import Maze from './maze';
 // linked list sparse array of visible cells for drawing and panning
 export default class MazeView {
 	constructor(maze, {x, y, w, h}) {
-		if (x%1) { throw "x must be an integer"; }
-		if (y%1) { throw "y must be an integer"; }
-		if (w <= 0 || w%1) { throw "width must be an integer > 0"; }
-		if (h <= 0 || h%1) { throw "height must be an integer > 0"; }
-
-		maze.mazeView = this; // backreference hack so maze can call up
-
+		maze.mazeView = this; // backreference so maze can call up
 		this.maze = maze;
 		this.width = 1;
 		this.height = 1;
@@ -24,7 +18,6 @@ export default class MazeView {
 				cell: maze.get(0, 0).cell,
 			},
 		};
-
 		this.refocus({x, y, w, h});
 	}
 
@@ -34,7 +27,7 @@ export default class MazeView {
 			return;
 		}
 		if (newX%1 || newY%1) { throw "x and y must be integers"; }
-		if (newW <= 0 || newH <= 0 || newW%1 || newH%1) { throw "w and h must be integers > 0"; }
+		if (newW <= 0 || newH <= 0 || newW%1 || newH%1) { throw "w and h must be positive integers"; }
 
 		let oldX = this.firstRow.firstCol.x;
 		let oldW = this.width;
@@ -95,7 +88,7 @@ export default class MazeView {
 		}
 	}
 
-	reload() {
+	reloadAll() {
 		let row = this.firstRow;
 		while (row) {
 			let col = row.firstCol;
@@ -105,32 +98,36 @@ export default class MazeView {
 			}
 			row = row.nextRow;
 		}
-		if (this.canvasView) this.canvasView.requireRedraw();
-	}
-
-	get(x, y, prop) {
-		return maze.get(x, y, prop);
-	}
-
-	getCol(x, y) {
-		let row = this.firstRow;
-		while (row.y !== y) row = row.nextRow;
-		let col = row.firstCol;
-		while (col.x !== x) col = col.nextCol;
-		return col;
-	}
-
-	toggle(x, y, prop, state) {
-		let r = this.maze.toggle(x, y, prop, state);
-		if (r.created) {
-			this.getCol(x, y).cell = r.cell;
+		if (this.canvasView) {
+			this.canvasView.requireRedraw();
 		}
-		return r;
 	}
 
-	clear(x, y) {
-		if (this.maze.clear(x, y)) {
-			this.getCol(x, y).cell = null;
+	reload(x, y, cell) {
+		cell = (cell === undefined ? this.maze.get(x, y).cell : cell);
+		// transport x and y into nearest mazeview coordinates and repeat
+		let x0 = this.firstRow.firstCol.x, y0 = this.firstRow.y;
+		let mw = this.maze.width, mh = this.maze.height;
+		let xoff = x<0 ? mw+(x%mw) : x%mw;
+		let yoff = y<0 ? mh+(y%mh) : y%mh;
+		let x0off = x0<0 ? mw+(x0%mw) : x0%mw;
+		let y0off = y0<0 ? mh+(y0%mh) : y0%mh;
+		y = y0 + (yoff - y0off);
+		if (yoff < y0off) y += mh;
+		let row = this.firstRow;
+		for (; y < y0 + this.height; y += mh) {
+			while (row.y < y) row = row.nextRow;
+			x = x0 + (xoff - x0off);
+			if (xoff < x0off) x += mw;
+			let col = row.firstCol;
+			for (; x < x0 + this.width; x += mw) {
+				while (col.x < x) col = col.nextCol;
+				console.debug('reload', x, y);
+				col.cell = cell;
+			}
+		}
+		if (this.canvasView) {
+			this.canvasView.requireRedraw();
 		}
 	}
 

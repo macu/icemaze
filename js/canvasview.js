@@ -23,7 +23,7 @@ export default class CanvasView {
 		this.preDrawCallbacks = [];
 		this.postDrawCallbacks = [];
 		this.mazeView = new MazeView(maze, this.getVisibleRect());
-		this.mazeView.canvasView = this; // backreference hack so mazeview can call up
+		this.mazeView.canvasView = this; // backreference so mazeview can call up
 		this.requireRedraw();
 	}
 
