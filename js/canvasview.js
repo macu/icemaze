@@ -267,6 +267,23 @@ export default class CanvasView {
 		}.bind(this));
 		logo.draw(this.canvas);
 
+		// crosshairs
+		this.c2d.beginPath();
+		for (let i = 0; i < 4; i++) {
+			let vert = [1, 0, -1, 0][i];
+			let horz = [0, 1, 0, -1][i];
+			let cx = this.canvas.width/2, cy = this.canvas.height/2;
+			let ts055 = 0.55*this.tileSize, ts105 = 1.05*this.tileSize, ts_2 = this.tileSize/2;
+			this.c2d.moveTo(cx - vert*(1+ts_2), cy + vert*(ts055)); // ._|
+			this.c2d.lineTo(cx - vert*1, cy + vert*(ts055)); // _.|
+			this.c2d.lineTo(cx - vert*1, cy + vert*(ts105)); // _|.
+			this.c2d.lineTo(cx + vert*1, cy + vert*(ts105)); // .|_
+			this.c2d.lineTo(cx + vert*1, cy + vert*(ts055)); // |._
+			this.c2d.lineTo(cx + vert*(1+ts_2), cy + vert*(ts055)); // |_.
+		}
+		this.c2d.strokeStyle = 'rgba(0,0,0,.8)';
+		this.c2d.stroke();
+
 		let postDrawCallbacks = this.postDrawCallbacks;
 		this.postDrawCallbacks = [];
 		postDrawCallbacks.forEach(function(cb){ cb(); });

@@ -2,7 +2,8 @@ import Dexie from 'dexie';
 
 export const db = new Dexie('mazes');
 db.version( 1 ).stores({
-	cells: "[maze+x+y], maze, ground, block"
+	mazes: "name",
+	cells: "[maze+x+y], maze",
 });
 db.open().catch(err => {
 	console.error("Couldn't open database", err);
@@ -41,6 +42,7 @@ export class Maze {
 	}
 
 	_restoreMaze(saveName) {
+		// TODO restore width and height
 		let grid = this.grid;
 		let cells = db.cells.where('maze').equals(saveName).each(cell => {
 			let row = grid[cell.y];
