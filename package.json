@@ -1,0 +1,17 @@
+{
+  "name": "icemaze",
+  "private": true,
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-rollup": "^2.11.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-sourcemaps": "^2.6.0",
+    "rollup-plugin-buble": "^0.15.0",
+    "rollup-plugin-replace": "^1.1.1",
+    "rollup-plugin-scss": "^0.2.0",
+    "rollup-plugin-uglify": "^2.0.1",
+    "rollup-plugin-vue": "^2.4.0"
+  }
+}
