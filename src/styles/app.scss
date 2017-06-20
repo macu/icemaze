@@ -1,3 +1,16 @@
 html, body {
 	height: 100%;
 }
+
+.table {
+	display: table;
+	width: 100%;
+}
+.table-cell-fill {
+	display: table-cell;
+	width: 100%;
+	vertical-align: top;
+}
+.table-cell {
+	display: table-cell;
+}
