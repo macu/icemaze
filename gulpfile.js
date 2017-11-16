@@ -14,10 +14,10 @@ gulp.task('vueify', function() {
 		.pipe(sourcemaps.init())
 		.pipe(rollup({
 			// https://www.npmjs.com/package/gulp-rollup#options
-			entry: './src/app.js',
+			input: './src/app.js',
 			impliedExtensions: ['.js', '.vue'],
 			allowRealFiles: true,
-			moduleName: 'app',
+			name: 'app',
 			// separateCaches: vueifyCaches, // https://github.com/vuejs/rollup-plugin-vue/issues/67
 			format: 'iife',
 			external: [

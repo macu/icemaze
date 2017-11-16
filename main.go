@@ -18,12 +18,12 @@ import (
 const useHTTPS = false
 
 func main() {
-	var createNewUser = flag.Bool("createUser", false, "Whether to create a user on startup")
-	var createUsername = flag.String("username", "", "Username for new user")
-	var createPassword = flag.String("password", "", "Password for new user")
+	createNewUser := flag.Bool("createUser", false, "Whether to create a user on startup")
+	createUsername := flag.String("username", "", "Username for new user")
+	createPassword := flag.String("password", "", "Password for new user")
 	flag.Parse()
 
-	db, err := sql.Open("mysql", "root:mysqlpw7925@/icemaze?charset=utf8&parseTime=true")
+	db, err := sql.Open("mysql", "root:mysqlpw@/icemaze?charset=utf8&parseTime=true")
 	if err != nil {
 		log.Fatalln(err)
 	}

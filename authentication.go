@@ -92,6 +92,7 @@ func makeLoginHandler(db *sql.DB) func(http.ResponseWriter, *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		} else if err != nil {
+			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -19,6 +19,6 @@ func makeSessionID() string {
 		bytes[i] = letters[randGen.Intn(len(letters))]
 	}
 	randMutex.Unlock()
-	// 20 digits + 1 + 9 = 30 digits
+	// 20 digits (current time) + 1 (:) + 9 (random) = 30 digit session ID
 	return fmt.Sprintf("%020d:%s", time.Now().UnixNano(), string(bytes))
 }
